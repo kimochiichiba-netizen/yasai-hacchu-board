@@ -11,7 +11,7 @@
     regno: "", // インボイス登録番号（任意）
   };
 
-  function itemsRows(items, showWish) {
+  function itemsRows(items, noPrice) {
     return items
       .map((it) => {
         const unit = Number(it.unitPrice) || 0;
@@ -19,10 +19,17 @@
         const amount = unit * qty;
         const nameCell =
           C.escapeHtml(it.name) + (it.variant ? `（${C.escapeHtml(it.variant)}）` : "");
+        if (noPrice) {
+          // 金額なし納品書：品目・数量・サイズ/品種のみ
+          return `<tr>
+            <td>${nameCell}</td>
+            <td class="right">${qty} ${C.escapeHtml(it.unit || "")}</td>
+            <td>${C.escapeHtml(it.variant || "")}</td>
+          </tr>`;
+        }
         return `<tr>
           <td>${nameCell}</td>
           <td class="right">${qty} ${C.escapeHtml(it.unit || "")}</td>
-          ${showWish ? `<td class="right">${it.wishPrice ? C.yen(it.wishPrice) : "—"}</td>` : ""}
           <td class="right">${unit ? C.yen(unit) : "—"}</td>
           <td class="right">${unit ? C.yen(amount) : "—"}</td>
         </tr>`;
@@ -31,14 +38,12 @@
   }
 
   function buildDoc(kind, order) {
+    const noPrice = kind === "delivery_noprice";
+    const isInvoice = kind === "invoice";
     const t = C.calcTotals(order.items);
-    const title = kind === "invoice" ? "請 求 書" : "納 品 書";
-    const dateLabel = kind === "invoice" ? "請求日" : "納品日";
-    const dateVal =
-      kind === "invoice"
-        ? C.todayLocal()
-        : order.deliveryDate || C.todayLocal();
-    const showWish = false; // 確定単価のみ印字
+    const title = isInvoice ? "請 求 書" : noPrice ? "納 品 書" : "納 品 書";
+    const dateLabel = isInvoice ? "請求日" : "納品日";
+    const dateVal = isInvoice ? C.todayLocal() : order.deliveryDate || C.todayLocal();
     return `
       <div class="doc">
         <style>
@@ -76,20 +81,28 @@
             ${COMPANY.regno ? "登録番号 " + COMPANY.regno : ""}
           </div>
         </div>
-        ${kind === "invoice" ? `<div class="meta">下記の通りご請求申し上げます。</div>` : `<div class="meta">下記の通り納品いたします。</div>`}
+        ${isInvoice
+          ? `<div class="meta">下記の通りご請求申し上げます。</div>`
+          : noPrice
+            ? `<div class="meta">下記の通り納品いたします。（お代金は後日ご請求いたします）</div>`
+            : `<div class="meta">下記の通り納品いたします。</div>`}
         <table>
           <thead>
-            <tr><th>品目</th><th class="right">数量</th><th class="right">単価</th><th class="right">金額</th></tr>
+            ${noPrice
+              ? `<tr><th>品目</th><th class="right">数量</th><th>サイズ・品種</th></tr>`
+              : `<tr><th>品目</th><th class="right">数量</th><th class="right">単価</th><th class="right">金額</th></tr>`}
           </thead>
-          <tbody>${itemsRows(order.items, showWish)}</tbody>
+          <tbody>${itemsRows(order.items, noPrice)}</tbody>
         </table>
-        <table class="totals">
+        ${noPrice
+          ? `<div class="note" style="margin-top:18px">※ 金額は記載していません（後日、確定単価で請求書を発行します）。</div>`
+          : `<table class="totals">
           <tr><td>小計</td><td class="right">${C.yen(t.subtotal)}</td></tr>
           <tr><td>消費税(8% 軽減税率)</td><td class="right">${C.yen(t.tax)}</td></tr>
           <tr class="grand"><td>合計</td><td class="right">${C.yen(t.total)}</td></tr>
-        </table>
+        </table>`}
         ${order.note ? `<div class="note">備考：${C.escapeHtml(order.note)}</div>` : ""}
-        <div class="seal">※ 食品（軽減税率8%対象）。本書はインボイス制度の適格請求書様式に準じています。</div>
+        ${isInvoice ? `<div class="seal">※ 食品（軽減税率8%対象）。本書はインボイス制度の適格請求書様式に準じています。</div>` : `<div class="seal">※ 食品（軽減税率8%対象）。</div>`}
       </div>`;
   }
 

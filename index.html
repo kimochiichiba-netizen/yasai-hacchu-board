@@ -69,10 +69,24 @@
   <div class="mode-note" id="modeNote"></div>
   <div class="toast" id="toast"></div>
 
+  <!-- 送信後の控え発行 -->
+  <div class="modal-bg" id="afterSubmit">
+    <div class="modal" style="max-width:380px;text-align:center">
+      <h2 style="color:#2e7d32">✅ 注文を送信しました</h2>
+      <p class="muted" style="font-size:0.88rem" id="afterMsg"></p>
+      <div class="btnbar" style="justify-content:center">
+        <button class="btn" id="printCopyBtn">📦 控え（納品書・金額なし）を印刷</button>
+        <button class="btn secondary" id="closeAfter">閉じる</button>
+      </div>
+    </div>
+  </div>
+  <div id="print-area" style="position:absolute;left:-9999px;top:0"></div>
+
   <script src="assets/data.js"></script>
   <script src="assets/common.js"></script>
   <script src="assets/config.js" onerror="void 0"></script>
   <script src="assets/store.js"></script>
+  <script src="assets/pdf.js"></script>
   <script src="assets/order.js"></script>
 </body>
 </html>

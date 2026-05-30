@@ -17,46 +17,35 @@
     setTimeout(() => t.classList.remove("show"), 2600);
   }
 
-  /* ---- ソフトロック（画面内ロック画面）----
-   * 公開運用では Netlify のパスワード保護を併用してください（README参照）。
-   * Promise を返し、解錠されたら resolve する。*/
+  /* ---- ロック画面 ----
+   * デモ（パスコード未設定）ではロックなしで開く。
+   * 本番は assets/config.js の YASAI_CONFIG.ADMIN_PASSCODE を設定するとロックが有効。
+   * さらに公開時は Netlify のパスワード保護併用を推奨（README参照）。*/
   function gate() {
-    const KEY = "yasai_admin_pass";
+    const pass = (window.YASAI_CONFIG && window.YASAI_CONFIG.ADMIN_PASSCODE) || "";
+    if (!pass) return Promise.resolve(true); // デモ：ロックなし
     return new Promise((resolve) => {
-      const saved = localStorage.getItem(KEY);
-      const first = !saved;
       const ov = document.createElement("div");
       ov.className = "modal-bg show";
       ov.style.alignItems = "center";
       ov.innerHTML = `
         <div class="modal" style="max-width:360px;text-align:center">
           <h2>🔒 管理画面</h2>
-          <p class="muted" style="font-size:0.85rem">
-            ${first ? "初回設定：パスコードを決めてください" : "パスコードを入力してください"}
-          </p>
-          <div class="field"><input id="passInput" type="password" autocomplete="off" placeholder="パスコード" /></div>
+          <p class="muted" style="font-size:0.85rem">パスワードを入力してください</p>
+          <div class="field"><input id="passInput" type="password" autocomplete="off" placeholder="パスワード" /></div>
           <div id="passErr" style="color:#c62828;font-size:0.8rem;min-height:1em"></div>
-          <button class="btn" id="passBtn" style="width:100%">${first ? "設定して入る" : "入る"}</button>
+          <button class="btn" id="passBtn" style="width:100%">入る</button>
         </div>`;
       document.body.appendChild(ov);
       const input = ov.querySelector("#passInput");
       const err = ov.querySelector("#passErr");
       input.focus();
       const tryUnlock = () => {
-        const val = input.value;
-        if (!val) {
-          err.textContent = "入力してください";
-          return;
-        }
-        if (first) {
-          localStorage.setItem(KEY, val);
-          ov.remove();
-          resolve(true);
-        } else if (val === localStorage.getItem(KEY)) {
+        if (input.value === pass) {
           ov.remove();
           resolve(true);
         } else {
-          err.textContent = "パスコードが違います";
+          err.textContent = "パスワードが違います";
           input.value = "";
         }
       };
@@ -151,14 +140,22 @@
         <tr><td><strong>合計</strong></td><td class="right"><strong id="mTotal">—</strong></td></tr>
       </table>
       <div class="btnbar">
-        <button class="btn" id="saveBtn">単価を保存</button>
+        <button class="btn" id="noPriceBtn">📦 納品書（金額なし）</button>
+        <button class="btn secondary" id="saveBtn">単価を保存</button>
         <button class="btn secondary" id="deliveryBtn">📄 納品書PDF</button>
         <button class="btn accent" id="invoiceBtn">🧾 請求書PDF</button>
         <button class="btn secondary" id="doneBtn">✅ 発行済にする</button>
-      </div>`;
+      </div>
+      <p class="muted" style="font-size:0.78rem;margin-top:6px">
+        「📦 納品書（金額なし）」は単価を入れる前でも発行できます。荷物に付ける品目・数量だけの納品書です。
+      </p>`;
 
     $("modal").classList.add("show");
     $("closeModal").addEventListener("click", closeModal);
+    $("noPriceBtn").addEventListener("click", () => {
+      readUnitPrices();
+      PDF.printDoc("delivery_noprice", current);
+    });
     $("saveBtn").addEventListener("click", savePrices);
     $("deliveryBtn").addEventListener("click", () => issue("delivery"));
     $("invoiceBtn").addEventListener("click", () => issue("invoice"));

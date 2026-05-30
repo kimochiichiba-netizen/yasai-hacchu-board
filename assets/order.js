@@ -135,7 +135,16 @@
         note: $("note").value.trim(),
         items,
       });
-      showToast("注文を送信しました（注文番号 " + order.id.slice(-6) + "）");
+      // 送信完了パネル（控えの印刷を案内）
+      $("afterMsg").textContent =
+        "注文番号 " + order.id.slice(-6) + "（" + order.items.length + "品目）。控えが必要な場合は下から印刷できます。";
+      $("afterSubmit").classList.add("show");
+      $("printCopyBtn").onclick = function () {
+        window.YasaiPDF.printDoc("delivery_noprice", order);
+      };
+      $("closeAfter").onclick = function () {
+        $("afterSubmit").classList.remove("show");
+      };
       // 入力リセット
       document.querySelectorAll(".item-row").forEach((row) => {
         row.querySelector('[data-role="qty"]').value = "";

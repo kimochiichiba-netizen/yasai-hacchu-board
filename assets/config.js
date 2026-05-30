@@ -14,5 +14,6 @@
 
 // window.YASAI_CONFIG = {
 //   SUPABASE_URL: "https://xxxxx.supabase.co",
-//   SUPABASE_ANON_KEY: "eyJhbGciOi...（anon public キー。secret/service キーは絶対に置かない）"
+//   SUPABASE_ANON_KEY: "eyJhbGciOi...（anon public キー。secret/service キーは絶対に置かない）",
+//   ADMIN_PASSCODE: "好きな合言葉"   // ←管理画面 admin.html のロック。未設定ならロックなし（デモ）
 // };
