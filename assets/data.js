@@ -101,11 +101,13 @@ const PRODUCTS = [
   { id: "hassaku", name: "はっさく", cat: "citrus", units: ["個", "ケース"], peak: [1, 2, 3], std: 150 },
   { id: "decopon", name: "デコポン", cat: "citrus", units: ["個", "ケース"], peak: [2, 3, 4], std: 300 },
   { id: "kabosu", name: "かぼす", cat: "citrus", units: ["袋", "ケース"], peak: [8, 9, 10], std: 150, note: "大分名産" },
+  { id: "shiranui", name: "不知火（しらぬい）", cat: "citrus", units: ["個", "ケース", "箱"], peak: [2, 3, 4], std: 1100 },
+  { id: "kawachi", name: "河内晩柑", cat: "citrus", units: ["個", "ケース", "箱"], peak: [4, 5, 6, 7], std: 2000, note: "晩柑" },
   { id: "yuzu", name: "ゆず", cat: "citrus", units: ["個", "袋", "ケース"], peak: [11, 12], std: 200 },
   { id: "lime", name: "ライム", cat: "citrus", units: ["個", "ケース"], peak: [], std: 100, note: "輸入" },
 
   // ===== 果物 =====
-  { id: "ringo", name: "りんご", cat: "fruit", units: ["袋", "ケース", "箱"], variants: ["ふじ", "その他"], peak: [10, 11, 12, 1], std: 400 },
+  { id: "ringo", name: "りんご", cat: "fruit", units: ["袋", "ケース", "箱"], variants: ["ふじ", "王林", "その他"], peak: [10, 11, 12, 1], std: 400 },
   { id: "nashi", name: "梨", cat: "fruit", units: ["個", "ケース", "箱"], peak: [8, 9, 10], std: 250 },
   { id: "budou", name: "ぶどう", cat: "fruit", units: ["パック", "ケース", "箱"], variants: ["シャイン", "巨峰", "その他"], peak: [8, 9, 10], std: 500 },
   { id: "kaki", name: "柿", cat: "fruit", units: ["個", "ケース", "箱"], peak: [10, 11, 12], std: 200 },
