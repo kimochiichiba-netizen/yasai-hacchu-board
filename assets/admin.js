@@ -139,19 +139,24 @@
         <tr><td>消費税(8%)</td><td class="right" id="mTax">—</td></tr>
         <tr><td><strong>合計</strong></td><td class="right"><strong id="mTotal">—</strong></td></tr>
       </table>
+      <p class="muted" style="font-size:0.82rem;margin:4px 0 8px">
+        上の「確定単価」に金額を入れる → 下の「✉️ 取引先へ送る」で完了です。
+      </p>
       <div class="btnbar">
-        <button class="btn" id="noPriceBtn">📦 納品書（金額なし）</button>
-        <button class="btn secondary" id="saveBtn">単価を保存</button>
-        <button class="btn secondary" id="deliveryBtn">📄 納品書PDF</button>
-        <button class="btn accent" id="invoiceBtn">🧾 請求書PDF</button>
-        <button class="btn secondary" id="doneBtn">✅ 発行済にする</button>
+        <button class="btn" id="sendBtn">✉️ 取引先へ送る</button>
+        <button class="btn secondary" id="deliveryBtn">🖨 納品書PDF</button>
+        <button class="btn secondary" id="invoiceBtn">🧾 請求書PDF</button>
       </div>
-      <p class="muted" style="font-size:0.78rem;margin-top:6px">
-        「📦 納品書（金額なし）」は単価を入れる前でも発行できます。荷物に付ける品目・数量だけの納品書です。
-      </p>`;
+      <div class="btnbar" style="margin-top:6px">
+        <button class="btn secondary small" id="saveBtn">💾 単価を保存</button>
+        <button class="btn secondary small" id="noPriceBtn">📦 金額なし納品書</button>
+        <button class="btn secondary small" id="doneBtn">✅ 発行済にする</button>
+      </div>
+      <div id="sendPanel"></div>`;
 
     $("modal").classList.add("show");
     $("closeModal").addEventListener("click", closeModal);
+    $("sendBtn").addEventListener("click", openSend);
     $("noPriceBtn").addEventListener("click", () => {
       readUnitPrices();
       PDF.printDoc("delivery_noprice", current);
@@ -207,6 +212,52 @@
       return;
     }
     PDF.printDoc(kind === "invoice" ? "invoice" : "delivery", current);
+  }
+
+  /* 取引先へ送る：金額入りの納品書テキストを作り、メール下書き or コピー */
+  async function openSend() {
+    readUnitPrices();
+    if (!current.items.some((it) => it.unitPrice != null)) {
+      showToast("先に金額（確定単価）を入力してください");
+      return;
+    }
+    await savePrices(); // 送る前に保存
+    const text = PDF.buildText("delivery", current);
+    const emailMatch = (current.contact || "").match(/[^\s<>]+@[^\s<>]+/);
+    const email = emailMatch ? emailMatch[0] : "";
+    const subject = "納品書 " + current.partner + "様（注文" + current.id.slice(-6) + "）";
+
+    const panel = $("sendPanel");
+    panel.innerHTML = `
+      <h3 style="margin:14px 0 6px">取引先へ送る</h3>
+      <textarea id="sendText" rows="9" style="width:100%;font-size:0.82rem">${C.escapeHtml(text)}</textarea>
+      <div class="btnbar">
+        <button class="btn" id="mailBtn">📧 メールで送る</button>
+        <button class="btn secondary" id="copyBtn">📋 コピー（LINE等に貼付）</button>
+      </div>
+      <p class="muted" style="font-size:0.75rem">
+        メールアプリが開きます。宛先・内容を確認してから送信してください（自動送信はしません）。
+        ${email ? "宛先：" + C.escapeHtml(email) : "※連絡先にメールが無いため、宛先は手入力してください。"}
+      </p>`;
+
+    $("mailBtn").onclick = function () {
+      const body = $("sendText").value;
+      window.location.href =
+        "mailto:" + encodeURIComponent(email) +
+        "?subject=" + encodeURIComponent(subject) +
+        "&body=" + encodeURIComponent(body);
+    };
+    $("copyBtn").onclick = function () {
+      const ta = $("sendText");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(ta.value).then(() => showToast("コピーしました"));
+      } else {
+        ta.select();
+        document.execCommand("copy");
+        showToast("コピーしました");
+      }
+    };
+    panel.scrollIntoView({ behavior: "smooth", block: "end" });
   }
 
   async function markDone() {

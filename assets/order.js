@@ -135,13 +135,10 @@
         note: $("note").value.trim(),
         items,
       });
-      // 送信完了パネル（控えの印刷を案内）
+      // 送信完了パネル
       $("afterMsg").textContent =
-        "注文番号 " + order.id.slice(-6) + "（" + order.items.length + "品目）。控えが必要な場合は下から印刷できます。";
+        "注文番号 " + order.id.slice(-6) + "（" + order.items.length + "品目）を受け付けました。ありがとうございます。";
       $("afterSubmit").classList.add("show");
-      $("printCopyBtn").onclick = function () {
-        window.YasaiPDF.printDoc("delivery_noprice", order);
-      };
       $("closeAfter").onclick = function () {
         $("afterSubmit").classList.remove("show");
       };

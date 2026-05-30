@@ -106,11 +106,52 @@
       </div>`;
   }
 
+  // 別ウィンドウで開いて印刷（本体ページの余白で白紙が大量に出る不具合を回避）
   function printDoc(kind, order) {
-    const area = document.getElementById("print-area");
-    area.innerHTML = buildDoc(kind, order);
-    window.print();
+    const html = buildDoc(kind, order);
+    const w = window.open("", "_blank", "width=820,height=900");
+    if (!w) {
+      alert("印刷ウィンドウがブロックされました。ブラウザのポップアップを許可してください。");
+      return;
+    }
+    w.document.write(
+      '<!doctype html><html lang="ja"><head><meta charset="utf-8" />' +
+        "<title>" +
+        (kind === "invoice" ? "請求書" : "納品書") +
+        "</title></head><body style='margin:18px'>" +
+        html +
+        "</body></html>"
+    );
+    w.document.close();
+    w.focus();
+    setTimeout(function () {
+      w.print();
+    }, 350);
   }
 
-  window.YasaiPDF = { buildDoc, printDoc, COMPANY };
+  // メール／LINE貼り付け用のテキスト版納品書
+  function buildText(kind, order) {
+    const t = C.calcTotals(order.items);
+    const L = [];
+    L.push("【納品書】" + COMPANY.name);
+    L.push((order.partner || "") + " 御中");
+    L.push("納品日：" + (order.deliveryDate || C.todayLocal()) + "　注文番号：" + order.id.slice(-6));
+    L.push("──────────────");
+    order.items.forEach((it) => {
+      const unit = Number(it.unitPrice) || 0;
+      const qty = Number(it.qty) || 0;
+      const nm = it.name + (it.variant ? "（" + it.variant + "）" : "");
+      L.push(nm + "　" + qty + (it.unit || "") + "　単価" + (unit ? C.yen(unit) : "未定") + "　" + (unit ? C.yen(unit * qty) : "—"));
+    });
+    L.push("──────────────");
+    L.push("小計：" + C.yen(t.subtotal));
+    L.push("消費税(8%)：" + C.yen(t.tax));
+    L.push("合計：" + C.yen(t.total));
+    if (order.note) L.push("備考：" + order.note);
+    L.push("");
+    L.push(COMPANY.name + (COMPANY.tel ? "　TEL " + COMPANY.tel : ""));
+    return L.join("\n");
+  }
+
+  window.YasaiPDF = { buildDoc, printDoc, buildText, COMPANY };
 })();
