@@ -109,10 +109,11 @@
       .map((it, i) => {
         const p = PRODUCTS.find((x) => x.id === it.productId);
         const std = p ? p.std : "";
+        const wishText = it.wish ? it.wish : it.wishPrice ? C.yen(it.wishPrice) : "—";
         return `<tr>
           <td>${C.escapeHtml(it.name)}${it.variant ? "（" + C.escapeHtml(it.variant) + "）" : ""}</td>
           <td class="right">${it.qty} ${C.escapeHtml(it.unit || "")}</td>
-          <td class="right">${it.wishPrice ? C.yen(it.wishPrice) : "—"}</td>
+          <td>${C.escapeHtml(wishText)}</td>
           <td><input type="number" min="0" data-idx="${i}" class="unitp" placeholder="${std}"
                 value="${it.unitPrice != null ? it.unitPrice : ""}" /></td>
           <td class="right amt" data-idx="${i}">—</td>
@@ -131,7 +132,7 @@
       </p>
       ${o.note ? `<p style="background:#fffde7;padding:8px;border-radius:8px;font-size:0.85rem">備考：${C.escapeHtml(o.note)}</p>` : ""}
       <table class="list">
-        <thead><tr><th>品目</th><th class="right">数量</th><th class="right">希望金額</th><th>確定単価(円)</th><th class="right">金額</th></tr></thead>
+        <thead><tr><th>品目</th><th class="right">数量</th><th>希望・ご要望</th><th>確定単価(円)</th><th class="right">金額</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <table class="list" style="width:auto;margin-left:auto;margin-top:10px">

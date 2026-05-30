@@ -71,8 +71,8 @@
             </div>
           </div>
           <div><span class="colhead">サイズ/品種</span>${variantSel}</div>
-          <div><span class="colhead">希望金額(円)</span>
-            <input data-role="price" type="number" min="0" inputmode="numeric" placeholder="例:${p.std}" /></div>`;
+          <div><span class="colhead">希望金額・ご要望</span>
+            <input data-role="wish" type="text" placeholder="例:${p.std}円 / 特売なら多め" /></div>`;
         host.appendChild(row);
       });
     });
@@ -98,7 +98,7 @@
         qty,
         unit: row.querySelector('[data-role="unit"]').value || "",
         variant: row.querySelector('[data-role="variant"]').value || "",
-        wishPrice: Number(row.querySelector('[data-role="price"]').value) || null,
+        wish: row.querySelector('[data-role="wish"]').value.trim() || "",
         unitPrice: null, // 社長が確定
       });
     });
@@ -145,7 +145,7 @@
       // 入力リセット
       document.querySelectorAll(".item-row").forEach((row) => {
         row.querySelector('[data-role="qty"]').value = "";
-        row.querySelector('[data-role="price"]').value = "";
+        row.querySelector('[data-role="wish"]').value = "";
         row.classList.remove("has-qty");
       });
       $("note").value = "";

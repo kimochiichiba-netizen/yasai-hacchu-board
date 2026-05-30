@@ -44,10 +44,10 @@ const PRODUCTS = [
   { id: "celery", name: "セロリ", cat: "leaf", units: ["株", "ケース"], peak: [11, 12, 1, 2], std: 500 },
 
   // ===== 果菜・実野菜 =====
-  { id: "kyuri", name: "胡瓜（キュウリ）", cat: "fruitveg", units: ["本", "ケース", "箱"], peak: [6, 7, 8], std: 500 },
-  { id: "tomato", name: "トマト", cat: "fruitveg", units: ["パック", "ケース", "箱"], peak: [6, 7, 8], std: 110 },
-  { id: "minitomato", name: "ミニトマト", cat: "fruitveg", units: ["パック", "ケース"], peak: [6, 7, 8], std: 180 },
-  { id: "nasu", name: "茄子（ナス）", cat: "fruitveg", units: ["袋", "ケース", "箱"], peak: [7, 8, 9], std: 900 },
+  { id: "kyuri", name: "胡瓜（キュウリ）", cat: "fruitveg", units: ["ケース", "バラ", "カゴ", "袋"], peak: [6, 7, 8], std: 500 },
+  { id: "tomato", name: "トマト", cat: "fruitveg", units: ["ケース", "バラ", "カゴ", "袋"], peak: [6, 7, 8], std: 110 },
+  { id: "minitomato", name: "ミニトマト", cat: "fruitveg", units: ["ケース", "バラ", "カゴ", "袋"], peak: [6, 7, 8], std: 180 },
+  { id: "nasu", name: "茄子（ナス）", cat: "fruitveg", units: ["ケース", "バラ", "カゴ", "袋"], peak: [7, 8, 9], std: 900 },
   { id: "piman", name: "ピーマン", cat: "fruitveg", units: ["袋", "ケース"], peak: [6, 7, 8, 9], std: 100 },
   { id: "paprika", name: "パプリカ", cat: "fruitveg", units: ["個", "ケース"], peak: [6, 7, 8, 9], std: 200 },
   { id: "shishito", name: "ししとう", cat: "fruitveg", units: ["パック", "ケース"], peak: [7, 8, 9], std: 120 },
@@ -67,14 +67,14 @@ const PRODUCTS = [
   // ===== 根菜・いも類 =====
   { id: "daikon", name: "大根", cat: "root", units: ["本", "ケース"], peak: [11, 12, 1, 2], std: 850 },
   { id: "kabu", name: "かぶ", cat: "root", units: ["袋", "束", "ケース"], peak: [11, 12, 3, 4], std: 120 },
-  { id: "ninjin", name: "人参", cat: "root", units: ["袋", "ケース", "箱"], peak: [10, 11, 12, 4, 5], std: 300 },
+  { id: "ninjin", name: "人参", cat: "root", units: ["ケース", "バラ", "カゴ", "袋"], peak: [10, 11, 12, 4, 5], std: 300 },
   { id: "gobou", name: "ごぼう（洗い）", cat: "root", units: ["袋", "ケース"], peak: [11, 12, 1, 4], std: 100, note: "加工済あり" },
   { id: "renkon", name: "レンコン", cat: "root", units: ["パック", "ケース"], peak: [11, 12, 1], std: 200, note: "加工済あり" },
-  { id: "jagaimo", name: "じゃがいも", cat: "root", units: ["袋", "ケース", "箱"], variants: ["メークイン", "男爵"], peak: [5, 6, 10, 11], std: 150 },
+  { id: "jagaimo", name: "じゃがいも（馬鈴薯）", cat: "root", units: ["ケース", "バラ", "カゴ", "袋"], variants: ["メークイン", "男爵"], peak: [5, 6, 10, 11], std: 150 },
   { id: "satoimo", name: "里いも", cat: "root", units: ["袋", "ケース"], peak: [9, 10, 11, 12], std: 180 },
   { id: "nagaimo", name: "長芋", cat: "root", units: ["本", "ケース", "箱"], peak: [11, 12, 1, 2, 3], std: 4800 },
   { id: "kantarou", name: "甘太くん（さつまいも）", cat: "root", units: ["ケース", "袋"], variants: ["大", "中", "小"], peak: [10, 11, 12, 1], std: 250, note: "大分ブランド" },
-  { id: "tamanegi", name: "玉葱", cat: "root", units: ["袋", "ケース", "箱"], peak: [5, 6, 9, 10], std: 1800 },
+  { id: "tamanegi", name: "玉葱", cat: "root", units: ["ケース", "バラ", "カゴ", "袋"], peak: [5, 6, 9, 10], std: 1800 },
   { id: "shintamanegi", name: "新玉ねぎ", cat: "root", units: ["袋", "ケース"], peak: [3, 4, 5], std: 1500 },
   { id: "takenoko", name: "たけのこ", cat: "root", units: ["本", "ケース"], peak: [3, 4, 5], std: 300 },
 
