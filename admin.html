@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>やさい発注ボード｜管理画面</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="app">
+    <h1>🧾 やさい発注ボード（管理）</h1>
+    <div class="sub">株式会社気持ち市場 — 注文確認・納品書/請求書発行</div>
+    <div class="nav">
+      <a href="#orders" data-tab="orders">📥 注文一覧</a>
+      <a href="#prices" data-tab="prices">📈 旬・価格の調整</a>
+      <a href="index.html" target="_blank">🥬 発注画面を開く</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- 注文一覧タブ -->
+    <section id="tab-orders">
+      <div class="card">
+        <h2>届いた注文</h2>
+        <table class="list" id="ordersTable">
+          <thead>
+            <tr><th>注文番号</th><th>取引先</th><th>注文日</th><th>品目数</th><th>状態</th><th>合計</th></tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+        <div class="empty" id="ordersEmpty" style="display:none">まだ注文はありません。</div>
+      </div>
+    </section>
+
+    <!-- 価格調整タブ -->
+    <section id="tab-prices" style="display:none">
+      <div class="card">
+        <h2>旬・価格傾向の調整</h2>
+        <p class="muted" style="font-size:0.85rem;margin-top:-6px">
+          「自動」は旬カレンダーで判定。社長が「安い／高い」に変えると発注画面のおすすめに反映されます。標準単価も変更できます。
+        </p>
+        <table class="list">
+          <thead>
+            <tr><th>品目</th><th>今の自動判定</th><th>表示</th><th>標準単価(円)</th></tr>
+          </thead>
+          <tbody id="pricesBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- 注文詳細モーダル -->
+  <div class="modal-bg" id="modal">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <!-- 印刷エリア（通常は非表示、印刷時のみ） -->
+  <div id="print-area" style="position:absolute;left:-9999px;top:0"></div>
+
+  <div class="mode-note" id="modeNote"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/config.js" onerror="void 0"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/pdf.js"></script>
+  <script src="assets/admin.js"></script>
+</body>
+</html>

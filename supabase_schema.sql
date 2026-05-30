@@ -1,0 +1,44 @@
+-- やさい発注ボード — Supabase スキーマ（本番共有モード用）
+-- Supabase の SQL Editor に貼り付けて実行してください。
+
+-- 注文テーブル
+create table if not exists public.orders (
+  id            text primary key,
+  partner       text not null,
+  contact       text,
+  "orderDate"   date,
+  "deliveryDate" date,
+  note          text,
+  items         jsonb not null default '[]'::jsonb,
+  status        text not null default 'received',
+  "createdAt"   timestamptz not null default now()
+);
+
+-- 価格傾向の手動上書き
+create table if not exists public.price_overrides (
+  "productId"   text primary key,
+  trend         text not null check (trend in ('cheap','high'))
+);
+
+create index if not exists idx_orders_created on public.orders ("createdAt" desc);
+create index if not exists idx_orders_status on public.orders (status, "orderDate");
+
+-- RLS（行レベルセキュリティ）
+-- 取引先は注文の「作成」のみ、社長（管理）は閲覧・更新できる構成が望ましい。
+-- まずは匿名キーで動作確認するため最小構成。公開前に必ず見直すこと。
+alter table public.orders enable row level security;
+alter table public.price_overrides enable row level security;
+
+-- 取引先：注文の作成と、価格傾向の閲覧のみ許可
+create policy "anon can insert orders" on public.orders
+  for insert to anon with check (true);
+create policy "anon can read price_overrides" on public.price_overrides
+  for select to anon using (true);
+
+-- 注意：注文の閲覧・更新（管理画面）は、本番では Supabase Auth でログインした
+-- 管理者ロールだけに絞ってください。下記は検証用に anon へ許可する暫定ポリシー。
+-- 公開運用時はこの2つを削除し、authenticated 限定に置き換えること。
+create policy "TEMP anon can read orders" on public.orders
+  for select to anon using (true);
+create policy "TEMP anon can update orders" on public.orders
+  for update to anon using (true) with check (true);

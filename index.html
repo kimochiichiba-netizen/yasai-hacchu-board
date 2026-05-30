@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>やさい発注ボード｜ご注文</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="app">
+    <h1>🥬 やさい発注ボード</h1>
+    <div class="sub">株式会社気持ち市場 — ご注文フォーム</div>
+  </header>
+
+  <div class="wrap">
+    <!-- おすすめ -->
+    <div class="reco" id="reco"></div>
+
+    <!-- 取引先情報 -->
+    <div class="card">
+      <h2>お客様情報</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>店舗・会社名 <span style="color:#c62828">*</span></label>
+          <input id="partner" placeholder="例：〇〇商店" autocomplete="organization" />
+        </div>
+        <div class="field">
+          <label>ご担当者・連絡先（任意）</label>
+          <input id="contact" placeholder="例：田中 / 090-0000-0000" />
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>注文日</label>
+          <input id="orderDate" type="date" />
+        </div>
+        <div class="field">
+          <label>入荷希望日（任意）</label>
+          <input id="deliveryDate" type="date" />
+        </div>
+      </div>
+      <!-- スパム対策: 人間には見えないハニーポット -->
+      <div style="position:absolute;left:-9999px" aria-hidden="true">
+        <label>この欄は入力しないでください</label>
+        <input id="website" tabindex="-1" autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- 商品一覧 -->
+    <div class="card">
+      <h2>ご注文品目（数量を入れた品目だけ送られます）</h2>
+      <p class="muted" style="font-size:0.83rem;margin-top:-6px">
+        欲しい品目に「数量」を入れてください。サイズ・品種・希望金額は任意です。
+      </p>
+      <div id="catalog"></div>
+    </div>
+
+    <div class="field">
+      <label>備考・連絡事項（任意）</label>
+      <textarea id="note" rows="2" placeholder="例：午前中に届けてほしい など"></textarea>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <span class="count" id="count">選択 0 品目</span>
+    <button class="btn" id="submitBtn">この内容で注文する</button>
+  </div>
+
+  <div class="mode-note" id="modeNote"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/config.js" onerror="void 0"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/order.js"></script>
+</body>
+</html>
