@@ -8,7 +8,17 @@
   const month = C.currentMonth();
 
   let overrides = {};
+  let supplierMap = {};
   let current = null; // 開いている注文
+  let groupTexts = {}; // 仕入先ごとのコピー用テキスト
+
+  function supplierOf(id) {
+    return Object.prototype.hasOwnProperty.call(supplierMap, id) ? supplierMap[id] : defaultSupplier(id);
+  }
+  function supplierLabel(key) {
+    const s = SUPPLIERS.find((x) => x.key === key);
+    return s ? s.label : "未割当";
+  }
 
   function showToast(msg) {
     const t = $("toast");
@@ -130,6 +140,7 @@
         注文日 ${C.escapeHtml(o.orderDate || "")}／入荷希望 ${C.escapeHtml(o.deliveryDate || "未指定")}
         ${o.contact ? "／連絡先 " + C.escapeHtml(o.contact) : ""}
       </p>
+      ${o.request ? `<p style="background:#e8f5e9;padding:8px;border-radius:8px;font-size:0.9rem">🥕 リクエスト：${C.escapeHtml(o.request)}</p>` : ""}
       ${o.note ? `<p style="background:#fffde7;padding:8px;border-radius:8px;font-size:0.85rem">備考：${C.escapeHtml(o.note)}</p>` : ""}
       <table class="list">
         <thead><tr><th>品目</th><th class="right">数量</th><th>希望・ご要望</th><th>確定単価(円)</th><th class="right">金額</th></tr></thead>
@@ -140,6 +151,8 @@
         <tr><td>消費税(8%)</td><td class="right" id="mTax">—</td></tr>
         <tr><td><strong>合計</strong></td><td class="right"><strong id="mTotal">—</strong></td></tr>
       </table>
+      <h3 style="margin:16px 0 6px">仕入先ごとに振り分け（その人の分をコピーして発注）</h3>
+      <div id="supGroups"></div>
       <p class="muted" style="font-size:0.82rem;margin:4px 0 8px">
         上の「確定単価」に金額を入れる → 下の「✉️ 取引先へ送る」で完了です。
       </p>
@@ -171,6 +184,48 @@
       if (e.target.classList.contains("unitp")) recalc();
     });
     recalc();
+    renderGroups();
+  }
+
+  /* 仕入先ごとに品目をまとめ、各担当の発注分をコピーできるように表示 */
+  function renderGroups() {
+    const order = current;
+    const groups = {};
+    (order.items || []).forEach((it) => {
+      const key = supplierOf(it.productId);
+      (groups[key] = groups[key] || []).push(it);
+    });
+    groupTexts = {};
+    const head = "【" + (order.partner || "") + "】" + (order.deliveryDate ? " 納品希望 " + order.deliveryDate : "");
+    const blocks = Object.keys(groups).map((key) => {
+      const items = groups[key];
+      const textLines = items.map(
+        (it) => "・" + it.name + (it.variant ? "（" + it.variant + "）" : "") + " " + it.qty + (it.unit || "") + (it.wish ? "／" + it.wish : "")
+      );
+      groupTexts[key] = head + "\n" + textLines.join("\n");
+      const htmlLines = items
+        .map((it) => `<div style="font-size:0.86rem">・${C.escapeHtml(it.name)}${it.variant ? "（" + C.escapeHtml(it.variant) + "）" : ""} <strong>${it.qty}${C.escapeHtml(it.unit || "")}</strong>${it.wish ? ' <span class="muted">／' + C.escapeHtml(it.wish) + "</span>" : ""}</div>`)
+        .join("");
+      return `<div class="card" style="margin:8px 0;padding:10px;background:#fafdfa">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <strong>${C.escapeHtml(supplierLabel(key))}（${items.length}品目）</strong>
+          <button class="btn small" data-copygroup="${C.escapeHtml(key)}">📋 この人の分をコピー</button>
+        </div>
+        <div style="margin-top:6px">${htmlLines}</div>
+      </div>`;
+    });
+    $("supGroups").innerHTML = blocks.join("") || '<p class="muted">品目がありません。</p>';
+    $("supGroups").querySelectorAll("[data-copygroup]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.getAttribute("data-copygroup");
+        const text = groupTexts[key] || "";
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => showToast(supplierLabel(key) + " の分をコピーしました"));
+        } else {
+          showToast("コピーできませんでした");
+        }
+      });
+    });
   }
 
   function readUnitPrices() {
@@ -296,7 +351,12 @@
             <option value="high"${cur === "high" ? " selected" : ""}>📈 高い</option>
           </select>
         </td>
-        <td><input type="number" min="0" data-id="${p.id}" class="stdp" value="${stdVal}" style="width:110px" /></td>`;
+        <td><input type="number" min="0" data-id="${p.id}" class="stdp" value="${stdVal}" style="width:110px" /></td>
+        <td>
+          <select data-id="${p.id}" class="supsel">
+            ${SUPPLIERS.map((s) => `<option value="${s.key}"${supplierOf(p.id) === s.key ? " selected" : ""}>${C.escapeHtml(s.label)}</option>`).join("")}
+          </select>
+        </td>`;
       body.appendChild(tr);
     });
 
@@ -313,6 +373,13 @@
         showToast("標準単価を更新しました");
       });
     });
+    body.querySelectorAll(".supsel").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        store.setSupplier(sel.dataset.id, sel.value);
+        supplierMap = store.getSupplierMap();
+        showToast("仕入先を更新しました");
+      });
+    });
   }
 
   async function init() {
@@ -323,6 +390,7 @@
     } catch (e) {
       console.error(e);
     }
+    supplierMap = store.getSupplierMap();
     await renderOrders();
     $("modeNote").textContent =
       store.mode === "supabase"

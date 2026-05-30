@@ -26,7 +26,36 @@
     overrides: "yasai_price_overrides",
     products: "yasai_products_override",
     partners: "yasai_partners",
+    suppliers: "yasai_supplier_map",
   };
+
+  /* 発注 → Discord 通知（Webhook URL が設定されていれば送信。失敗しても注文は成立） */
+  async function notifyDiscord(order) {
+    const url = cfg.DISCORD_WEBHOOK_URL;
+    if (!url) return;
+    const lines = (order.items || []).map(
+      (it) =>
+        "・" + it.name + (it.variant ? "（" + it.variant + "）" : "") +
+        " " + it.qty + (it.unit || "") + (it.wish ? "／" + it.wish : "")
+    );
+    const content =
+      "🥬 **新しい発注がありました**\n" +
+      "取引先：" + (order.partner || "") + "\n" +
+      "注文番号：" + order.id.slice(-6) + "\n" +
+      (order.deliveryDate ? "入荷希望：" + order.deliveryDate + "\n" : "") +
+      lines.join("\n") +
+      (order.request ? "\n📝 リクエスト：" + order.request : "") +
+      (order.note ? "\n備考：" + order.note : "");
+    try {
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: content.slice(0, 1900) }),
+      });
+    } catch (e) {
+      console.error("Discord通知に失敗:", e);
+    }
+  }
 
   function lsGet(key, fallback) {
     try {
@@ -67,6 +96,7 @@
         orderDate: order.orderDate || (window.YasaiCommon && window.YasaiCommon.todayLocal()),
         deliveryDate: order.deliveryDate || "",
         note: order.note || "",
+        request: order.request || "",
         items: order.items || [],
         status: "received",
         createdAt: new Date().toISOString(),
@@ -79,6 +109,7 @@
         all.unshift(record);
         lsSet(LS_KEYS.orders, all);
       }
+      notifyDiscord(record); // 非同期・失敗しても注文は成立
       return record;
     },
 
@@ -147,6 +178,16 @@
       const map = lsGet(LS_KEYS.products, {});
       map[productId] = Object.assign({}, map[productId], patch);
       lsSet(LS_KEYS.products, map);
+    },
+
+    /* ---------- 仕入先（担当）の割当（社長が編集） ---------- */
+    getSupplierMap() {
+      return lsGet(LS_KEYS.suppliers, {});
+    },
+    setSupplier(productId, supKey) {
+      const map = lsGet(LS_KEYS.suppliers, {});
+      map[productId] = supKey;
+      lsSet(LS_KEYS.suppliers, map);
     },
   };
 

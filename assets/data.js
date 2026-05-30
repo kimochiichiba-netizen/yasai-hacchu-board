@@ -20,6 +20,7 @@ const PRODUCTS = [
   { id: "broccoli", name: "ブロッコリー", cat: "leaf", units: ["ケース", "個"], peak: [11, 12, 1, 2, 3], std: 200 },
   { id: "cauliflower", name: "カリフラワー", cat: "leaf", units: ["ケース", "個"], peak: [11, 12, 1, 2], std: 200 },
   { id: "cabbage", name: "キャベツ", cat: "leaf", units: ["個", "ケース"], peak: [3, 4, 5, 11, 12], std: 750 },
+  { id: "murasaki_cabbage", name: "ムラサキキャベツ", cat: "leaf", units: ["個", "ケース"], peak: [11, 12, 1, 2], std: 200 },
   { id: "hakusai", name: "白菜", cat: "leaf", units: ["個", "ケース"], peak: [11, 12, 1, 2], std: 850 },
   { id: "lettuce", name: "レタス", cat: "leaf", units: ["個", "ケース"], peak: [5, 6, 7, 11, 12], std: 850 },
   { id: "sunny", name: "サニーレタス", cat: "leaf", units: ["個", "ケース"], peak: [5, 6, 11, 12], std: 850 },
@@ -142,4 +143,37 @@ const PRODUCTS = [
   { id: "sakuranbo", name: "さくらんぼ", cat: "season", units: ["ケース", "パック"], peak: [5, 6, 7], std: 100, note: "100円以下なら（3ケース）" },
 ];
 
-if (typeof module !== "undefined") { module.exports = { CATEGORIES, PRODUCTS }; }
+/* 仕入先（担当の人）。管理画面で品目ごとに変更可。 */
+const SUPPLIERS = [
+  { key: "sudo", label: "須藤さん（日豊青果130）" },
+  { key: "takeuchi", label: "竹内さん（日豊青果130・輸入果物/スイカ）" },
+  { key: "ohki", label: "大木さん（りんご）" },
+  { key: "miyabe", label: "宮部さん（大同青果）" },
+  { key: "aki", label: "あきさん（丸京青果122・土もの/葉物/小物）" },
+  { key: "yamanaka", label: "山中さん（大同青果・いちご/ぶどう）" },
+  { key: "kudo", label: "工藤さん（133・もも/さくらんぼ）" },
+  { key: "goto", label: "後藤さん（大同青果・スイカ）" },
+  { key: "", label: "未割当" },
+];
+
+/* 品目→仕入先の初期割当（聞き取りベース。管理画面で上書き可）。未掲載は「あきさん」が既定。 */
+const SUPPLIER_DEFAULT = {
+  daikon: "sudo", cabbage: "sudo", hakusai: "sudo", shironegi: "sudo",
+  mikan: "takeuchi", banana: "takeuchi", pineapple: "takeuchi", orange: "takeuchi",
+  grapefruit: "takeuchi", papaya: "takeuchi", dragonfruit: "takeuchi", lime: "takeuchi", mango: "takeuchi",
+  ringo: "ohki",
+  nira: "miyabe", shiitake: "miyabe", shimeji: "miyabe", enoki: "miyabe", eringi: "miyabe",
+  nameko: "miyabe", mush: "miyabe", maitake: "miyabe", kikurage: "miyabe",
+  broccoli: "miyabe", toumorokoshi: "miyabe", aspara: "miyabe", ingen: "miyabe",
+  murasaki_cabbage: "miyabe", zucchini: "miyabe",
+  ichigo: "yamanaka", budou: "yamanaka",
+  momo: "kudo", sakuranbo: "kudo",
+  suika: "goto",
+};
+function defaultSupplier(id) {
+  return Object.prototype.hasOwnProperty.call(SUPPLIER_DEFAULT, id) ? SUPPLIER_DEFAULT[id] : "aki";
+}
+
+if (typeof module !== "undefined") {
+  module.exports = { CATEGORIES, PRODUCTS, SUPPLIERS, SUPPLIER_DEFAULT, defaultSupplier };
+}

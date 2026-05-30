@@ -125,8 +125,9 @@
       return;
     }
     const items = collectItems();
-    if (!items.length) {
-      showToast("数量を入れた品目がありません");
+    const request = $("request").value.trim();
+    if (!items.length && !request) {
+      showToast("数量を入れた品目、またはリクエストを入力してください");
       return;
     }
     const btn = $("submitBtn");
@@ -138,6 +139,7 @@
         orderDate: $("orderDate").value,
         deliveryDate: $("deliveryDate").value,
         note: $("note").value.trim(),
+        request,
         items,
       });
       // 送信完了パネル
@@ -154,6 +156,7 @@
         row.classList.remove("has-qty");
       });
       $("note").value = "";
+      $("request").value = "";
       updateCount();
     } catch (e) {
       console.error(e);
