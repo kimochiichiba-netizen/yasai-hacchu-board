@@ -42,6 +42,12 @@ const PRODUCTS = [
   { id: "kaiware", name: "かいわれ大根", cat: "leaf", units: ["パック"], peak: [], std: 80 },
   { id: "ninniku", name: "にんにく", cat: "leaf", units: ["袋", "ケース", "個"], peak: [6, 7], std: 200 },
   { id: "celery", name: "セロリ", cat: "leaf", units: ["株", "ケース"], peak: [11, 12, 1, 2], std: 500 },
+  { id: "moyashi", name: "もやし", cat: "leaf", units: ["袋", "ケース"], peak: [], std: 30 },
+  { id: "takana", name: "高菜", cat: "leaf", units: ["束", "ケース"], peak: [2, 3, 4], std: 150, note: "九州定番" },
+  { id: "wakegi", name: "わけぎ", cat: "leaf", units: ["束", "ケース"], peak: [3, 4, 11, 12], std: 120 },
+  { id: "kuushinsai", name: "空芯菜", cat: "leaf", units: ["束", "袋"], peak: [7, 8, 9], std: 150 },
+  { id: "moroheiya", name: "モロヘイヤ", cat: "leaf", units: ["袋", "パック"], peak: [7, 8, 9], std: 150 },
+  { id: "babyleaf", name: "ベビーリーフ", cat: "leaf", units: ["パック", "袋"], peak: [], std: 200 },
 
   // ===== 果菜・実野菜 =====
   { id: "kyuri", name: "胡瓜（キュウリ）", cat: "fruitveg", units: ["ケース", "バラ", "カゴ", "袋"], peak: [6, 7, 8], std: 500 },
@@ -63,6 +69,7 @@ const PRODUCTS = [
   { id: "snap", name: "スナップえんどう", cat: "fruitveg", units: ["パック", "ケース"], peak: [4, 5, 6], std: 150 },
   { id: "greenpeas", name: "グリーンピース", cat: "fruitveg", units: ["袋", "パック"], peak: [4, 5], std: 200 },
   { id: "avocado", name: "アボカド", cat: "fruitveg", units: ["個", "ケース"], peak: [], std: 120 },
+  { id: "tougan", name: "冬瓜（とうがん）", cat: "fruitveg", units: ["個", "ケース"], peak: [7, 8, 9], std: 300 },
 
   // ===== 根菜・いも類 =====
   { id: "daikon", name: "大根", cat: "root", units: ["本", "ケース"], peak: [11, 12, 1, 2], std: 850 },
@@ -105,6 +112,11 @@ const PRODUCTS = [
   { id: "kawachi", name: "河内晩柑", cat: "citrus", units: ["個", "ケース", "箱"], peak: [4, 5, 6, 7], std: 2000, note: "晩柑" },
   { id: "yuzu", name: "ゆず", cat: "citrus", units: ["個", "袋", "ケース"], peak: [11, 12], std: 200 },
   { id: "lime", name: "ライム", cat: "citrus", units: ["個", "ケース"], peak: [], std: 100, note: "輸入" },
+  { id: "kinkan", name: "金柑", cat: "citrus", units: ["パック", "ケース"], peak: [1, 2, 3], std: 300, note: "宮崎産など" },
+  { id: "hyuganatsu", name: "日向夏", cat: "citrus", units: ["個", "ケース", "箱"], peak: [3, 4, 5], std: 250, note: "九州産" },
+  { id: "ponkan", name: "ポンカン", cat: "citrus", units: ["袋", "ケース", "箱"], peak: [1, 2], std: 250 },
+  { id: "iyokan", name: "いよかん", cat: "citrus", units: ["個", "ケース", "箱"], peak: [1, 2, 3], std: 200 },
+  { id: "buntan", name: "文旦（ぶんたん）", cat: "citrus", units: ["個", "ケース", "箱"], peak: [2, 3, 4], std: 400 },
 
   // ===== 果物 =====
   { id: "ringo", name: "りんご", cat: "fruit", units: ["袋", "ケース", "箱"], variants: ["ふじ", "王林", "その他"], peak: [10, 11, 12, 1], std: 400 },
@@ -122,6 +134,8 @@ const PRODUCTS = [
   { id: "papaya", name: "パパイヤ", cat: "fruit", units: ["個", "ケース"], peak: [5, 6, 7, 8, 9], std: 300, note: "輸入" },
   { id: "kiwi", name: "キウイ", cat: "fruit", units: ["個", "パック", "ケース"], variants: ["ゴールド", "グリーン"], peak: [11, 12, 1, 2, 3], std: 5000 },
   { id: "dragonfruit", name: "ドラゴンフルーツ", cat: "fruit", units: ["個", "ケース"], peak: [7, 8, 9], std: 400, note: "輸入" },
+  { id: "blueberry", name: "ブルーベリー", cat: "fruit", units: ["パック", "ケース"], peak: [6, 7, 8], std: 400 },
+  { id: "ichijiku", name: "いちじく", cat: "fruit", units: ["パック", "ケース"], peak: [8, 9, 10], std: 350 },
 
   // ===== 季節限定 =====
   { id: "ichigo", name: "いちご", cat: "season", units: ["パック", "ケース"], variants: ["ゆめのか", "その他"], peak: [12, 1, 2, 3, 4], std: 150, note: "150円以下なら（1パック）" },

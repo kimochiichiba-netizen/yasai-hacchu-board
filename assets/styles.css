@@ -83,6 +83,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); bor
   padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; background: #fff;
 }
 .item-row.has-qty { border-color: var(--green); background: var(--green-light); }
+.item-row.flash { animation: flashbg 1.6s ease; }
+@keyframes flashbg { 0%, 100% { background: #fff; } 25% { background: #fff3b0; } }
 .item-row .name { font-weight: 600; }
 .item-row .name .tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; margin-left: 6px; }
 .tag.cheap { background: #c8e6c9; color: var(--green-dark); }

@@ -9,6 +9,8 @@
 
   // 価格傾向の手動上書き（共有モードなら社長の設定を反映）
   let overrides = {};
+  let allProducts = [];
+  let recoOnly = false;
 
   function showToast(msg) {
     const t = $("toast");
@@ -25,7 +27,7 @@
   function renderReco(products) {
     const { cheap, up } = C.buildRecommendations(products, overrides, month);
     const chip = (x) =>
-      `<span class="chip">${C.escapeHtml(x.p.name)} <small>${x.t.icon}</small></span>`;
+      `<span class="chip" data-jump="${x.p.id}" style="cursor:pointer">${C.escapeHtml(x.p.name)} <small>${x.t.icon}</small></span>`;
     $("reco").innerHTML = `
       <div class="box cheap">
         <h3>📉 今が買い時の野菜（${month}月）</h3>
@@ -76,14 +78,17 @@
         host.appendChild(row);
       });
     });
+    if (!products.length) {
+      host.innerHTML = '<p class="empty">該当する品目がありません。</p>';
+    }
+  }
 
-    host.addEventListener("input", (e) => {
-      const row = e.target.closest(".item-row");
-      if (!row) return;
-      const qty = Number(row.querySelector('[data-role="qty"]').value) || 0;
-      row.classList.toggle("has-qty", qty > 0);
-      updateCount();
-    });
+  function isReco(p) {
+    const t = C.effectiveTrend(p, overrides, month);
+    return t.trend === "cheap" || t.trend === "soon-cheap";
+  }
+  function rerender() {
+    renderCatalog(recoOnly ? allProducts.filter(isReco) : allProducts);
   }
 
   function collectItems() {
@@ -165,10 +170,46 @@
     } catch (e) {
       console.error("価格傾向の取得に失敗:", e);
     }
-    const products = effectiveProducts();
-    renderReco(products);
-    renderCatalog(products);
+    allProducts = effectiveProducts();
+    renderReco(allProducts);
+    rerender();
     updateCount();
+
+    // 数量入力でハイライト＆カウント（一度だけ登録）
+    $("catalog").addEventListener("input", (e) => {
+      const row = e.target.closest(".item-row");
+      if (!row) return;
+      const qty = Number(row.querySelector('[data-role="qty"]').value) || 0;
+      row.classList.toggle("has-qty", qty > 0);
+      updateCount();
+    });
+
+    // おすすめチップ → 該当品目へジャンプ
+    $("reco").addEventListener("click", (e) => {
+      const c = e.target.closest("[data-jump]");
+      if (!c) return;
+      const row = document.querySelector('.item-row[data-id="' + c.dataset.jump + '"]');
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 1600);
+        const q = row.querySelector('[data-role="qty"]');
+        if (q) q.focus();
+      } else {
+        showToast("「すべて表示」に戻すと選べます");
+      }
+    });
+
+    // 「おすすめだけ表示」トグル
+    $("recoToggle").addEventListener("click", () => {
+      recoOnly = !recoOnly;
+      rerender();
+      $("recoToggle").textContent = recoOnly
+        ? "🥗 すべての品目を表示"
+        : "🥗 おすすめだけ表示（今安い・これから安くなる）";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
     $("submitBtn").addEventListener("click", submit);
     $("modeNote").textContent =
       store.mode === "supabase"
