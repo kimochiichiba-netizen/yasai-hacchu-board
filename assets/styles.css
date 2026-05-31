@@ -104,7 +104,7 @@ button.btn.small { padding: 7px 12px; font-size: 0.85rem; }
 
 .summary-bar {
   position: sticky; bottom: 0; background: #fff; border-top: 2px solid var(--green);
-  padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: space-between; align-items: center;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08); z-index: 15;
 }
 .summary-bar .count { font-weight: 700; color: var(--green-dark); }
@@ -138,8 +138,8 @@ table.list tr:hover { background: var(--green-light); cursor: pointer; }
 .modal-bg.show { display: flex; }
 .modal { background: #fff; border-radius: var(--radius); max-width: 760px; width: 100%; padding: 20px; }
 
-/* レスポンシブ（スマホ最適化） */
-@media (max-width: 640px) {
+/* レスポンシブ（iPhone・iPad縦まで最適化） */
+@media (max-width: 820px) {
   .wrap { padding: 12px; }
   header.app h1 { font-size: 1.1rem; }
   header.app .sub { font-size: 0.72rem; }

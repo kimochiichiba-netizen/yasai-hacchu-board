@@ -74,9 +74,44 @@
         const tab = a.dataset.tab;
         $("tab-orders").style.display = tab === "orders" ? "" : "none";
         $("tab-prices").style.display = tab === "prices" ? "" : "none";
+        $("tab-share").style.display = tab === "share" ? "" : "none";
         if (tab === "prices") renderPrices();
+        if (tab === "share") setupShare();
       });
     });
+  }
+
+  /* 発注画面（取引先用）のURLを求める */
+  function orderUrl() {
+    try {
+      return new URL("index.html", location.href).href;
+    } catch (e) {
+      return location.href.replace(/admin\.html.*$/, "index.html");
+    }
+  }
+
+  /* 発注リンクの共有（iPhone等の共有シート）＋QRコード */
+  function setupShare() {
+    const url = orderUrl();
+    $("shareUrl").value = url;
+    $("qrImg").src =
+      "https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=" + encodeURIComponent(url);
+    $("shareBtn").onclick = async function () {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "やさい発注ボード", text: "こちらから野菜・果物のご注文ができます", url: url });
+        } catch (e) {
+          /* ユーザーがキャンセル */
+        }
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+          showToast("共有に未対応のためURLをコピーしました");
+        });
+      }
+    };
+    $("copyUrlBtn").onclick = function () {
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { showToast("コピーしました"); });
+    };
   }
 
   /* ---- 注文一覧 ---- */
