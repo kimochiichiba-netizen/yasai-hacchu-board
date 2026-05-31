@@ -30,19 +30,19 @@ create index if not exists idx_orders_status on public.orders (status, "orderDat
 alter table public.orders enable row level security;
 alter table public.price_overrides enable row level security;
 
--- 取引先：注文の作成と、価格傾向の閲覧のみ許可
+-- 取引先(anon)：注文の作成と、価格傾向の閲覧のみ許可
 create policy "anon can insert orders" on public.orders
   for insert to anon with check (true);
 create policy "anon can read price_overrides" on public.price_overrides
   for select to anon using (true);
--- 価格傾向は管理画面(anonキー)から書き込むため全操作を許可（暫定）
-create policy "TEMP anon write price_overrides" on public.price_overrides
-  for all to anon using (true) with check (true);
 
--- 注意：注文の閲覧・更新（管理画面）は、本番では Supabase Auth でログインした
--- 管理者ロールだけに絞ってください。下記は検証用に anon へ許可する暫定ポリシー。
--- 公開運用時はこの2つを削除し、authenticated 限定に置き換えること。
-create policy "TEMP anon can read orders" on public.orders
-  for select to anon using (true);
-create policy "TEMP anon can update orders" on public.orders
-  for update to anon using (true) with check (true);
+-- 管理者：指定メールでログイン(Supabase Auth)した人だけ、注文の閲覧・更新と
+-- 価格傾向の書き込みを許可。メールアドレスは運用に合わせて変更すること。
+create policy "admin read orders" on public.orders
+  for select to authenticated using ((auth.jwt() ->> 'email') = 'kimochi.ichiba@gmail.com');
+create policy "admin update orders" on public.orders
+  for update to authenticated using ((auth.jwt() ->> 'email') = 'kimochi.ichiba@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'kimochi.ichiba@gmail.com');
+create policy "admin write price_overrides" on public.price_overrides
+  for all to authenticated using ((auth.jwt() ->> 'email') = 'kimochi.ichiba@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'kimochi.ichiba@gmail.com');
