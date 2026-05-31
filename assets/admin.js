@@ -31,38 +31,74 @@
    * デモ（パスコード未設定）ではロックなしで開く。
    * 本番は assets/config.js の YASAI_CONFIG.ADMIN_PASSCODE を設定するとロックが有効。
    * さらに公開時は Netlify のパスワード保護併用を推奨（README参照）。*/
-  function gate() {
-    const pass = (window.YASAI_CONFIG && window.YASAI_CONFIG.ADMIN_PASSCODE) || "";
-    if (!pass) return Promise.resolve(true); // デモ：ロックなし
+  const ADMIN_EMAIL = "kimochi.ichiba@gmail.com"; // RLSで許可された管理者メール
+
+  async function gate() {
+    // 共有モード：Supabaseログイン必須
+    if (store.mode === "supabase") {
+      try {
+        const user = await store.currentUser();
+        if (user) return true;
+      } catch (e) {
+        console.error(e);
+      }
+      return showLogin();
+    }
+    // デモ（共有なし）：ロックなし
+    return true;
+  }
+
+  function showLogin() {
     return new Promise((resolve) => {
       const ov = document.createElement("div");
       ov.className = "modal-bg show";
       ov.style.alignItems = "center";
       ov.innerHTML = `
-        <div class="modal" style="max-width:360px;text-align:center">
-          <h2>🔒 管理画面</h2>
-          <p class="muted" style="font-size:0.85rem">パスワードを入力してください</p>
-          <div class="field"><input id="passInput" type="password" autocomplete="off" placeholder="パスワード" /></div>
-          <div id="passErr" style="color:#c62828;font-size:0.8rem;min-height:1em"></div>
-          <button class="btn" id="passBtn" style="width:100%">入る</button>
+        <div class="modal" style="max-width:380px">
+          <h2 style="text-align:center;margin-top:0">🔒 管理画面ログイン</h2>
+          <p class="muted" style="font-size:0.82rem;text-align:center" id="loginMsg">メールとパスワードでログインしてください</p>
+          <div class="field"><label>メール</label><input id="emailInput" type="email" value="${ADMIN_EMAIL}" autocomplete="username" /></div>
+          <div class="field"><label>パスワード</label><input id="pwInput" type="password" autocomplete="current-password" placeholder="パスワード" /></div>
+          <div id="loginErr" style="color:#c62828;font-size:0.8rem;min-height:1.2em"></div>
+          <button class="btn" id="loginBtn" style="width:100%">ログイン</button>
+          <p style="text-align:center;margin-top:10px;font-size:0.82rem">
+            初めての方は <a href="#" id="toRegister">こちらで初回登録（パスワードを決める）</a>
+          </p>
         </div>`;
       document.body.appendChild(ov);
-      const input = ov.querySelector("#passInput");
-      const err = ov.querySelector("#passErr");
-      input.focus();
-      const tryUnlock = () => {
-        if (input.value === pass) {
+      let mode = "login";
+      const email = ov.querySelector("#emailInput");
+      const pw = ov.querySelector("#pwInput");
+      const err = ov.querySelector("#loginErr");
+      const btn = ov.querySelector("#loginBtn");
+      const msg = ov.querySelector("#loginMsg");
+      const toReg = ov.querySelector("#toRegister");
+      pw.focus();
+      toReg.addEventListener("click", (e) => {
+        e.preventDefault();
+        mode = mode === "login" ? "register" : "login";
+        btn.textContent = mode === "register" ? "登録して入る" : "ログイン";
+        msg.textContent = mode === "register" ? "初回だけ：好きなパスワードを決めて登録します" : "メールとパスワードでログインしてください";
+        toReg.textContent = mode === "register" ? "ログインに戻る" : "こちらで初回登録（パスワードを決める）";
+        err.textContent = "";
+      });
+      const submit = async () => {
+        err.textContent = "";
+        btn.disabled = true;
+        try {
+          if (mode === "register") await store.signUp(email.value.trim(), pw.value);
+          else await store.signIn(email.value.trim(), pw.value);
+          const u = await store.currentUser();
+          if (!u) throw new Error("ログインできませんでした（登録直後はもう一度ログインしてください）");
           ov.remove();
           resolve(true);
-        } else {
-          err.textContent = "パスワードが違います";
-          input.value = "";
+        } catch (e2) {
+          err.textContent = "失敗：" + (e2.message || "もう一度お試しください");
+          btn.disabled = false;
         }
       };
-      ov.querySelector("#passBtn").addEventListener("click", tryUnlock);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") tryUnlock();
-      });
+      btn.addEventListener("click", submit);
+      pw.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
     });
   }
 
@@ -420,6 +456,15 @@
   async function init() {
     await gate();
     setupTabs();
+    const logout = $("logoutLink");
+    if (logout) {
+      logout.style.display = store.mode === "supabase" ? "" : "none";
+      logout.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await store.signOut();
+        location.reload();
+      });
+    }
     try {
       overrides = await store.getOverrides();
     } catch (e) {

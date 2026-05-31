@@ -189,6 +189,28 @@
       map[productId] = supKey;
       lsSet(LS_KEYS.suppliers, map);
     },
+
+    /* ---------- 管理者ログイン（共有モードのみ） ---------- */
+    async currentUser() {
+      if (!sb) return null;
+      const { data } = await sb.auth.getUser();
+      return data ? data.user : null;
+    },
+    async signIn(email, password) {
+      if (!sb) throw new Error("共有モードではありません");
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return data.user;
+    },
+    async signUp(email, password) {
+      if (!sb) throw new Error("共有モードではありません");
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      return data.user;
+    },
+    async signOut() {
+      if (sb) await sb.auth.signOut();
+    },
   };
 
   window.YasaiStore = store;
