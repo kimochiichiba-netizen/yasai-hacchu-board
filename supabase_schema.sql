@@ -35,6 +35,9 @@ create policy "anon can insert orders" on public.orders
   for insert to anon with check (true);
 create policy "anon can read price_overrides" on public.price_overrides
   for select to anon using (true);
+-- 価格傾向は管理画面(anonキー)から書き込むため全操作を許可（暫定）
+create policy "TEMP anon write price_overrides" on public.price_overrides
+  for all to anon using (true) with check (true);
 
 -- 注意：注文の閲覧・更新（管理画面）は、本番では Supabase Auth でログインした
 -- 管理者ロールだけに絞ってください。下記は検証用に anon へ許可する暫定ポリシー。
