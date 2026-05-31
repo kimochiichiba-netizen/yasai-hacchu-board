@@ -9,6 +9,7 @@ create table if not exists public.orders (
   "orderDate"   date,
   "deliveryDate" date,
   note          text,
+  request       text,
   items         jsonb not null default '[]'::jsonb,
   status        text not null default 'received',
   "createdAt"   timestamptz not null default now()
