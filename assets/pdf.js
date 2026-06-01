@@ -106,12 +106,12 @@
       </div>`;
   }
 
-  /* 同一ページに全画面オーバーレイで表示し、PDFを直接生成して保存する。
-   * iPhone/iPad、LINEアプリ内ブラウザ、Chrome等では window.print() が
-   * 無反応になる（アプリ内ブラウザは印刷API自体が禁止）ため、
-   * 「PDF保存」は html2canvas + jsPDF で実ファイルを生成してダウンロードする。
-   * これによりどのブラウザでも確実にPDFが手元に残る。
-   * 印刷したい人向けに「印刷」ボタンも併設（@media printで他要素を隠す）。 */
+  /* 同一ページに全画面オーバーレイで表示し、PDFを生成して
+   * iPhoneの共有メニュー（LINE・メール等）へ直接渡す。
+   * - iPhoneは pdf.save() のダウンロードが「どこに保存されたか分からない」ため、
+   *   navigator.share でPDFファイルを共有シートに乗せるのが唯一確実な送付/保存方法。
+   * - 共有ファイルが使えない端末（PC等）はダウンロード保存にフォールバック。
+   * - 印刷したい人向けに「印刷」ボタンも併設。 */
   function printDoc(kind, order) {
     const html = buildDoc(kind, order);
     const old = document.getElementById("print-overlay");
@@ -124,6 +124,7 @@
       (order.partner || "").replace(/[\\/:*?"<>|\s]+/g, "") +
       "_" +
       String(order.id || "").slice(-6);
+    const shareTitle = docLabel + "（" + (order.partner || "") + "様）";
 
     const ov = document.createElement("div");
     ov.id = "print-overlay";
@@ -136,7 +137,7 @@
       "#print-overlay .pbtn{background:#fff;color:#2e7d32}" +
       "#print-overlay .ibtn{background:rgba(255,255,255,.22);color:#fff}" +
       "#print-overlay .cbtn{background:rgba(255,255,255,.22);color:#fff}" +
-      "#print-overlay .hint{font-size:.78rem;color:#fff;text-align:center;padding:0 12px 8px;background:#2e7d32}" +
+      "#print-overlay .hint{font-size:.8rem;color:#fff;text-align:center;padding:0 12px 9px;background:#2e7d32}" +
       "#print-overlay .sheet{max-width:720px;margin:16px auto;background:#fff;padding:24px;box-shadow:0 2px 14px rgba(0,0,0,.15)}" +
       "@media print{body>*:not(#print-overlay){display:none!important}" +
       "#print-overlay{position:static!important;overflow:visible!important;background:#fff!important}" +
@@ -144,11 +145,11 @@
       "#print-overlay .sheet{max-width:none;margin:0;padding:0;box-shadow:none}}" +
       "</style>" +
       '<div class="pbar">' +
-      '<button class="pbtn" id="poPdf">📄 PDFを保存</button>' +
+      '<button class="pbtn" id="poShare">📤 LINE・メールで送る</button>' +
       '<button class="ibtn" id="poPrint">🖨 印刷</button>' +
       '<button class="cbtn" id="poClose">✕ 閉じる</button>' +
       "</div>" +
-      '<div class="hint" id="poHint">「📄 PDFを保存」を押すとPDFが作成されます（数秒かかります）。</div>' +
+      '<div class="hint" id="poHint">「📤 LINE・メールで送る」を押すとPDFを作成し、送り先（LINE・メール等）を選べます（数秒かかります）。</div>' +
       '<div class="sheet" id="poSheet">' +
       html +
       "</div>";
@@ -162,48 +163,45 @@
     document.getElementById("poPrint").addEventListener("click", function () {
       window.print();
     });
-    document.getElementById("poPdf").addEventListener("click", function () {
-      savePdf(fileBase);
+    document.getElementById("poShare").addEventListener("click", function () {
+      sharePdf(fileBase, shareTitle);
     });
   }
 
-  /* オーバーレイ内の納品書/請求書をPDFファイル化してダウンロードする。
-   * window.print() が使えない環境（LINE内ブラウザ等）でも確実に保存できる。 */
-  async function savePdf(fileBase) {
+  /* オーバーレイ内の納品書/請求書をPDF化し、iPhoneの共有シート（LINE・メール等）へ渡す。
+   * 共有ファイル非対応の端末ではダウンロード保存にフォールバックする。 */
+  async function sharePdf(fileBase, shareTitle) {
     const sheet = document.getElementById("poSheet");
-    const btn = document.getElementById("poPdf");
+    const btn = document.getElementById("poShare");
     const hint = document.getElementById("poHint");
     if (!sheet) return;
-    const jspdfNS = window.jspdf || window.jsPDF ? window.jspdf || window : null;
-    const hasLibs = typeof window.html2canvas === "function" && jspdfNS && (jspdfNS.jsPDF || window.jsPDF);
+    const JsPDF =
+      (window.jspdf && window.jspdf.jsPDF) || window.jsPDF || null;
+    const hasLibs = typeof window.html2canvas === "function" && JsPDF;
     if (!hasLibs) {
-      // ライブラリ未読込のときは印刷にフォールバック
       if (hint) hint.textContent = "PDF作成の準備ができていないため、印刷画面を開きます。";
       window.print();
       return;
     }
-    const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
     try {
-      if (btn) { btn.disabled = true; btn.textContent = "📄 作成中…"; }
+      if (btn) { btn.disabled = true; btn.textContent = "📤 作成中…"; }
       if (hint) hint.textContent = "PDFを作成しています。そのままお待ちください…";
+
       const canvas = await window.html2canvas(sheet, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
       });
-      const img = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new JsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const margin = 8;
       const imgW = pageW - margin * 2;
       const imgH = (canvas.height * imgW) / canvas.width;
-      let remaining = imgH;
-      let position = margin;
-      // 1ページに収まらない場合は複数ページに分割
       if (imgH <= pageH - margin * 2) {
-        pdf.addImage(img, "JPEG", margin, position, imgW, imgH);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, imgW, imgH);
       } else {
+        // 1ページに収まらない場合は複数ページに分割
         let sY = 0;
         const pxPerMm = canvas.width / imgW;
         const pageImgPx = (pageH - margin * 2) * pxPerMm;
@@ -213,21 +211,48 @@
           part.width = canvas.width;
           part.height = sliceH;
           part.getContext("2d").drawImage(canvas, 0, sY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-          const partImg = part.toDataURL("image/jpeg", 0.95);
-          const partH = (sliceH / pxPerMm);
           if (sY > 0) pdf.addPage();
-          pdf.addImage(partImg, "JPEG", margin, margin, imgW, partH);
+          pdf.addImage(part.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, imgW, sliceH / pxPerMm);
           sY += sliceH;
         }
       }
-      pdf.save(fileBase + ".pdf");
-      if (hint) hint.textContent = "PDFを保存しました。ファイル/ダウンロードをご確認ください。";
+
+      const blob = pdf.output("blob");
+      const fileName = fileBase + ".pdf";
+      const file = new File([blob], fileName, { type: "application/pdf" });
+
+      // iPhone等：共有シート（LINE・メール等）へPDFを直接渡す
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: shareTitle, text: shareTitle });
+          if (hint) hint.textContent = "送信先を選んでください（送らない場合はキャンセルでOK）。";
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") {
+            // 社長がキャンセルしただけ → 何もしない
+            if (hint) hint.textContent = "キャンセルしました。もう一度「📤 LINE・メールで送る」を押せます。";
+            return;
+          }
+          // 共有に失敗 → ダウンロードにフォールバック
+        }
+      }
+
+      // PC等（共有ファイル非対応）：ダウンロード保存
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      if (hint) hint.textContent = "PDFをダウンロードしました（パソコンは「ダウンロード」フォルダをご確認ください）。";
     } catch (e) {
       console.error("PDF作成に失敗:", e);
       if (hint) hint.textContent = "PDF作成に失敗したため、印刷画面を開きます。";
       window.print();
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = "📄 PDFを保存"; }
+      if (btn) { btn.disabled = false; btn.textContent = "📤 LINE・メールで送る"; }
     }
   }
 
