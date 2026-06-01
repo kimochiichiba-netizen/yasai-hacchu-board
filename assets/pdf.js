@@ -106,16 +106,24 @@
       </div>`;
   }
 
-  /* 同一ページに全画面オーバーレイで表示して印刷する。
-   * 旧方式（別ウィンドウ＋document.write）はiPhone/iPad Safariで
-   * 「真っ白・印刷が出ない」不具合が出るため廃止。
-   * - 新規ウィンドウを開かない → iOSの白紙化が原理的に起きない
-   * - 印刷は必ずユーザーのタップ(window.print)で発火 → iOSの自動print無視を回避
-   * - @media print で他要素を全て隠す → 本体ページ由来の白紙大量問題も解消 */
+  /* 同一ページに全画面オーバーレイで表示し、PDFを直接生成して保存する。
+   * iPhone/iPad、LINEアプリ内ブラウザ、Chrome等では window.print() が
+   * 無反応になる（アプリ内ブラウザは印刷API自体が禁止）ため、
+   * 「PDF保存」は html2canvas + jsPDF で実ファイルを生成してダウンロードする。
+   * これによりどのブラウザでも確実にPDFが手元に残る。
+   * 印刷したい人向けに「印刷」ボタンも併設（@media printで他要素を隠す）。 */
   function printDoc(kind, order) {
     const html = buildDoc(kind, order);
     const old = document.getElementById("print-overlay");
     if (old) old.remove();
+
+    const docLabel = kind === "invoice" ? "請求書" : "納品書";
+    const fileBase =
+      docLabel +
+      "_" +
+      (order.partner || "").replace(/[\\/:*?"<>|\s]+/g, "") +
+      "_" +
+      String(order.id || "").slice(-6);
 
     const ov = document.createElement("div");
     ov.id = "print-overlay";
@@ -124,30 +132,103 @@
       "#print-overlay{position:fixed;inset:0;z-index:99999;background:#f3f5f3;overflow:auto;-webkit-overflow-scrolling:touch}" +
       "#print-overlay .pbar{position:sticky;top:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:12px;background:#2e7d32;box-shadow:0 2px 8px rgba(0,0,0,.2)}" +
       "#print-overlay .pbar button{font-size:1rem;padding:12px 22px;border:0;border-radius:10px;font-weight:700;cursor:pointer;-webkit-appearance:none}" +
+      "#print-overlay .pbar button:disabled{opacity:.6}" +
       "#print-overlay .pbtn{background:#fff;color:#2e7d32}" +
+      "#print-overlay .ibtn{background:rgba(255,255,255,.22);color:#fff}" +
       "#print-overlay .cbtn{background:rgba(255,255,255,.22);color:#fff}" +
+      "#print-overlay .hint{font-size:.78rem;color:#fff;text-align:center;padding:0 12px 8px;background:#2e7d32}" +
       "#print-overlay .sheet{max-width:720px;margin:16px auto;background:#fff;padding:24px;box-shadow:0 2px 14px rgba(0,0,0,.15)}" +
       "@media print{body>*:not(#print-overlay){display:none!important}" +
       "#print-overlay{position:static!important;overflow:visible!important;background:#fff!important}" +
-      "#print-overlay .pbar{display:none!important}" +
+      "#print-overlay .pbar,#print-overlay .hint{display:none!important}" +
       "#print-overlay .sheet{max-width:none;margin:0;padding:0;box-shadow:none}}" +
       "</style>" +
       '<div class="pbar">' +
-      '<button class="pbtn" id="poPrint">🖨 印刷 / PDFで保存</button>' +
+      '<button class="pbtn" id="poPdf">📄 PDFを保存</button>' +
+      '<button class="ibtn" id="poPrint">🖨 印刷</button>' +
       '<button class="cbtn" id="poClose">✕ 閉じる</button>' +
       "</div>" +
-      '<div class="sheet">' +
+      '<div class="hint" id="poHint">「📄 PDFを保存」を押すとPDFが作成されます（数秒かかります）。</div>' +
+      '<div class="sheet" id="poSheet">' +
       html +
       "</div>";
 
     document.body.appendChild(ov);
+    ov.scrollTop = 0;
+
     document.getElementById("poClose").addEventListener("click", function () {
       ov.remove();
     });
     document.getElementById("poPrint").addEventListener("click", function () {
       window.print();
     });
-    ov.scrollTop = 0;
+    document.getElementById("poPdf").addEventListener("click", function () {
+      savePdf(fileBase);
+    });
+  }
+
+  /* オーバーレイ内の納品書/請求書をPDFファイル化してダウンロードする。
+   * window.print() が使えない環境（LINE内ブラウザ等）でも確実に保存できる。 */
+  async function savePdf(fileBase) {
+    const sheet = document.getElementById("poSheet");
+    const btn = document.getElementById("poPdf");
+    const hint = document.getElementById("poHint");
+    if (!sheet) return;
+    const jspdfNS = window.jspdf || window.jsPDF ? window.jspdf || window : null;
+    const hasLibs = typeof window.html2canvas === "function" && jspdfNS && (jspdfNS.jsPDF || window.jsPDF);
+    if (!hasLibs) {
+      // ライブラリ未読込のときは印刷にフォールバック
+      if (hint) hint.textContent = "PDF作成の準備ができていないため、印刷画面を開きます。";
+      window.print();
+      return;
+    }
+    const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = "📄 作成中…"; }
+      if (hint) hint.textContent = "PDFを作成しています。そのままお待ちください…";
+      const canvas = await window.html2canvas(sheet, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+      const img = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new JsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const imgW = pageW - margin * 2;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let remaining = imgH;
+      let position = margin;
+      // 1ページに収まらない場合は複数ページに分割
+      if (imgH <= pageH - margin * 2) {
+        pdf.addImage(img, "JPEG", margin, position, imgW, imgH);
+      } else {
+        let sY = 0;
+        const pxPerMm = canvas.width / imgW;
+        const pageImgPx = (pageH - margin * 2) * pxPerMm;
+        while (sY < canvas.height) {
+          const sliceH = Math.min(pageImgPx, canvas.height - sY);
+          const part = document.createElement("canvas");
+          part.width = canvas.width;
+          part.height = sliceH;
+          part.getContext("2d").drawImage(canvas, 0, sY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          const partImg = part.toDataURL("image/jpeg", 0.95);
+          const partH = (sliceH / pxPerMm);
+          if (sY > 0) pdf.addPage();
+          pdf.addImage(partImg, "JPEG", margin, margin, imgW, partH);
+          sY += sliceH;
+        }
+      }
+      pdf.save(fileBase + ".pdf");
+      if (hint) hint.textContent = "PDFを保存しました。ファイル/ダウンロードをご確認ください。";
+    } catch (e) {
+      console.error("PDF作成に失敗:", e);
+      if (hint) hint.textContent = "PDF作成に失敗したため、印刷画面を開きます。";
+      window.print();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "📄 PDFを保存"; }
+    }
   }
 
   // メール／LINE貼り付け用のテキスト版納品書
