@@ -106,27 +106,48 @@
       </div>`;
   }
 
-  // 別ウィンドウで開いて印刷（本体ページの余白で白紙が大量に出る不具合を回避）
+  /* 同一ページに全画面オーバーレイで表示して印刷する。
+   * 旧方式（別ウィンドウ＋document.write）はiPhone/iPad Safariで
+   * 「真っ白・印刷が出ない」不具合が出るため廃止。
+   * - 新規ウィンドウを開かない → iOSの白紙化が原理的に起きない
+   * - 印刷は必ずユーザーのタップ(window.print)で発火 → iOSの自動print無視を回避
+   * - @media print で他要素を全て隠す → 本体ページ由来の白紙大量問題も解消 */
   function printDoc(kind, order) {
     const html = buildDoc(kind, order);
-    const w = window.open("", "_blank", "width=820,height=900");
-    if (!w) {
-      alert("印刷ウィンドウがブロックされました。ブラウザのポップアップを許可してください。");
-      return;
-    }
-    w.document.write(
-      '<!doctype html><html lang="ja"><head><meta charset="utf-8" />' +
-        "<title>" +
-        (kind === "invoice" ? "請求書" : "納品書") +
-        "</title></head><body style='margin:18px'>" +
-        html +
-        "</body></html>"
-    );
-    w.document.close();
-    w.focus();
-    setTimeout(function () {
-      w.print();
-    }, 350);
+    const old = document.getElementById("print-overlay");
+    if (old) old.remove();
+
+    const ov = document.createElement("div");
+    ov.id = "print-overlay";
+    ov.innerHTML =
+      "<style>" +
+      "#print-overlay{position:fixed;inset:0;z-index:99999;background:#f3f5f3;overflow:auto;-webkit-overflow-scrolling:touch}" +
+      "#print-overlay .pbar{position:sticky;top:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:12px;background:#2e7d32;box-shadow:0 2px 8px rgba(0,0,0,.2)}" +
+      "#print-overlay .pbar button{font-size:1rem;padding:12px 22px;border:0;border-radius:10px;font-weight:700;cursor:pointer;-webkit-appearance:none}" +
+      "#print-overlay .pbtn{background:#fff;color:#2e7d32}" +
+      "#print-overlay .cbtn{background:rgba(255,255,255,.22);color:#fff}" +
+      "#print-overlay .sheet{max-width:720px;margin:16px auto;background:#fff;padding:24px;box-shadow:0 2px 14px rgba(0,0,0,.15)}" +
+      "@media print{body>*:not(#print-overlay){display:none!important}" +
+      "#print-overlay{position:static!important;overflow:visible!important;background:#fff!important}" +
+      "#print-overlay .pbar{display:none!important}" +
+      "#print-overlay .sheet{max-width:none;margin:0;padding:0;box-shadow:none}}" +
+      "</style>" +
+      '<div class="pbar">' +
+      '<button class="pbtn" id="poPrint">🖨 印刷 / PDFで保存</button>' +
+      '<button class="cbtn" id="poClose">✕ 閉じる</button>' +
+      "</div>" +
+      '<div class="sheet">' +
+      html +
+      "</div>";
+
+    document.body.appendChild(ov);
+    document.getElementById("poClose").addEventListener("click", function () {
+      ov.remove();
+    });
+    document.getElementById("poPrint").addEventListener("click", function () {
+      window.print();
+    });
+    ov.scrollTop = 0;
   }
 
   // メール／LINE貼り付け用のテキスト版納品書
