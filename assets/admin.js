@@ -36,6 +36,14 @@
   async function gate() {
     // 共有モード：Supabaseログイン必須
     if (store.mode === "supabase") {
+      // パスワード再設定リンクから戻ってきた場合（URLハッシュに type=recovery）
+      if (/type=recovery/.test(window.location.hash)) {
+        const ok = await showNewPassword();
+        if (ok) {
+          // ハッシュを消してから通常確認へ
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+      }
       try {
         const user = await store.currentUser();
         if (user) return true;
@@ -46,6 +54,47 @@
     }
     // デモ（共有なし）：ロックなし
     return true;
+  }
+
+  /* パスワード再設定リンクから戻ってきたときに、新しいパスワードを決める画面 */
+  function showNewPassword() {
+    return new Promise((resolve) => {
+      const ov = document.createElement("div");
+      ov.className = "modal-bg show";
+      ov.style.alignItems = "center";
+      ov.innerHTML = `
+        <div class="modal" style="max-width:380px">
+          <h2 style="text-align:center;margin-top:0">🔑 新しいパスワードを決める</h2>
+          <p class="muted" style="font-size:0.82rem;text-align:center">新しいパスワードを入力して保存してください（8文字以上を推奨）</p>
+          <div class="field"><label>新しいパスワード</label><input id="np1" type="password" autocomplete="new-password" placeholder="新しいパスワード" /></div>
+          <div class="field"><label>もう一度入力</label><input id="np2" type="password" autocomplete="new-password" placeholder="確認のためもう一度" /></div>
+          <div id="npErr" style="font-size:0.8rem;min-height:1.2em;color:#c62828"></div>
+          <button class="btn" id="npBtn" style="width:100%">この内容で保存</button>
+        </div>`;
+      document.body.appendChild(ov);
+      const np1 = ov.querySelector("#np1");
+      const np2 = ov.querySelector("#np2");
+      const npErr = ov.querySelector("#npErr");
+      const npBtn = ov.querySelector("#npBtn");
+      np1.focus();
+      const save = async () => {
+        npErr.style.color = "#c62828";
+        if (np1.value.length < 8) { npErr.textContent = "パスワードは8文字以上にしてください"; return; }
+        if (np1.value !== np2.value) { npErr.textContent = "2つのパスワードが一致しません"; return; }
+        npBtn.disabled = true;
+        try {
+          await store.updatePassword(np1.value);
+          npErr.style.color = "#2e7d32";
+          npErr.textContent = "新しいパスワードを保存しました。";
+          setTimeout(() => { ov.remove(); resolve(true); }, 900);
+        } catch (e) {
+          npErr.textContent = "失敗：" + (e.message || "もう一度お試しください");
+          npBtn.disabled = false;
+        }
+      };
+      npBtn.addEventListener("click", save);
+      np2.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    });
   }
 
   function showLogin() {
@@ -64,6 +113,9 @@
           <p style="text-align:center;margin-top:10px;font-size:0.82rem">
             初めての方は <a href="#" id="toRegister">こちらで初回登録（パスワードを決める）</a>
           </p>
+          <p style="text-align:center;margin-top:4px;font-size:0.82rem">
+            <a href="#" id="toForgot">パスワードを忘れた（メールで再設定）</a>
+          </p>
         </div>`;
       document.body.appendChild(ov);
       let mode = "login";
@@ -73,19 +125,51 @@
       const btn = ov.querySelector("#loginBtn");
       const msg = ov.querySelector("#loginMsg");
       const toReg = ov.querySelector("#toRegister");
+      const toForgot = ov.querySelector("#toForgot");
+      const pwField = pw.closest(".field");
       pw.focus();
       toReg.addEventListener("click", (e) => {
         e.preventDefault();
+        if (mode === "forgot") mode = "login"; // 再設定モードから戻す
         mode = mode === "login" ? "register" : "login";
+        pwField.style.display = "";
         btn.textContent = mode === "register" ? "登録して入る" : "ログイン";
         msg.textContent = mode === "register" ? "初回だけ：好きなパスワードを決めて登録します" : "メールとパスワードでログインしてください";
         toReg.textContent = mode === "register" ? "ログインに戻る" : "こちらで初回登録（パスワードを決める）";
+        err.textContent = "";
+      });
+      toForgot.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (mode === "forgot") {
+          // 通常ログインに戻す
+          mode = "login";
+          pwField.style.display = "";
+          btn.textContent = "ログイン";
+          msg.textContent = "メールとパスワードでログインしてください";
+          toForgot.textContent = "パスワードを忘れた（メールで再設定）";
+        } else {
+          // 再設定モード：パスワード欄を隠してメール送信に切替
+          mode = "forgot";
+          pwField.style.display = "none";
+          btn.textContent = "再設定メールを送る";
+          msg.textContent = "登録メール宛に「パスワード再設定」リンクを送ります";
+          toForgot.textContent = "ログインに戻る";
+          toReg.textContent = "こちらで初回登録（パスワードを決める）";
+        }
         err.textContent = "";
       });
       const submit = async () => {
         err.textContent = "";
         btn.disabled = true;
         try {
+          if (mode === "forgot") {
+            // パスワード再設定メールを送るだけ（ログインはしない）
+            await store.resetPassword(email.value.trim());
+            err.style.color = "#2e7d32";
+            err.textContent = "送信しました。メールの「再設定」リンクを開いてください。";
+            btn.disabled = false;
+            return;
+          }
           if (mode === "register") await store.signUp(email.value.trim(), pw.value);
           else await store.signIn(email.value.trim(), pw.value);
           const u = await store.currentUser();
@@ -93,6 +177,7 @@
           ov.remove();
           resolve(true);
         } catch (e2) {
+          err.style.color = "#c62828";
           err.textContent = "失敗：" + (e2.message || "もう一度お試しください");
           btn.disabled = false;
         }
