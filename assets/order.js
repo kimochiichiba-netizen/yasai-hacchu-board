@@ -11,6 +11,7 @@
   let overrides = {};
   let allProducts = [];
   let recoOnly = false;
+  let searchKeyword = "";
 
   function showToast(msg) {
     const t = $("toast");
@@ -87,8 +88,40 @@
     const t = C.effectiveTrend(p, overrides, month);
     return t.trend === "cheap" || t.trend === "soon-cheap";
   }
+  /* ひらがな⇄カタカナを区別せず検索できるよう、カタカナをひらがなに統一 */
+  function normalizeKana(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[ァ-ヶ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  /* 検索キーワードで品目を絞る（品名・品種・カテゴリ名に部分一致／かな区別なし） */
+  function matchesSearch(p) {
+    if (!searchKeyword) return true;
+    const cat = CATEGORIES.find((c) => c.key === p.cat);
+    const haystack = normalizeKana(
+      [p.name || "", (p.variants || []).join(" "), cat ? cat.label : "", p.note || ""].join(" ")
+    );
+    // スペース区切りで複数語AND検索
+    return normalizeKana(searchKeyword).split(/\s+/).every((w) => haystack.includes(w));
+  }
   function rerender() {
-    renderCatalog(recoOnly ? allProducts.filter(isReco) : allProducts);
+    let list = recoOnly ? allProducts.filter(isReco) : allProducts;
+    list = list.filter(matchesSearch);
+    renderCatalog(list);
+    updateSearchHint(list.length);
+  }
+  function updateSearchHint(count) {
+    const hint = $("searchHint");
+    const clear = $("searchClear");
+    if (!hint) return;
+    if (searchKeyword) {
+      hint.style.display = "";
+      hint.textContent = count > 0 ? `「${searchKeyword}」の検索結果：${count}品目` : `「${searchKeyword}」に一致する品目はありません`;
+      if (clear) clear.style.display = "";
+    } else {
+      hint.style.display = "none";
+      if (clear) clear.style.display = "none";
+    }
   }
 
   function collectItems() {
@@ -202,6 +235,24 @@
         showToast("「すべて表示」に戻すと選べます");
       }
     });
+
+    // 野菜の検索（入力するたびに絞り込み）
+    const searchInput = $("searchInput");
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        searchKeyword = searchInput.value.trim().toLowerCase();
+        rerender();
+      });
+    }
+    const searchClear = $("searchClear");
+    if (searchClear) {
+      searchClear.addEventListener("click", () => {
+        searchKeyword = "";
+        if (searchInput) searchInput.value = "";
+        rerender();
+        if (searchInput) searchInput.focus();
+      });
+    }
 
     // 「おすすめだけ表示」トグル
     $("recoToggle").addEventListener("click", () => {

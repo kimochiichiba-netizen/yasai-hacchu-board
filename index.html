@@ -58,6 +58,14 @@
       <p class="muted" style="font-size:0.83rem;margin-top:-6px">
         欲しい品目に「数量」を入れてください。サイズ・品種・希望金額は任意です。
       </p>
+      <!-- 野菜の検索欄 -->
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input id="searchInput" type="search" inputmode="search" autocomplete="off"
+               placeholder="野菜・果物を検索（例：トマト、きのこ、みかん）" />
+        <button type="button" id="searchClear" class="search-clear" aria-label="検索をクリア" style="display:none">✕</button>
+      </div>
+      <div id="searchHint" class="muted" style="font-size:0.8rem;margin:4px 2px 0;display:none"></div>
       <div id="catalog"></div>
     </div>
 
