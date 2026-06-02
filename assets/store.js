@@ -208,6 +208,21 @@
       if (error) throw error;
       return data.user;
     },
+    /* パスワード再設定メールを送る（本人のメール宛に再設定リンクが届く） */
+    async resetPassword(email) {
+      if (!sb) throw new Error("共有モードではありません");
+      const redirectTo = new URL("admin.html", window.location.href).href;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      return true;
+    },
+    /* 再設定リンクから戻ってきた後、新しいパスワードを確定する */
+    async updatePassword(newPassword) {
+      if (!sb) throw new Error("共有モードではありません");
+      const { error } = await sb.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return true;
+    },
     async signOut() {
       if (sb) await sb.auth.signOut();
     },
