@@ -265,10 +265,28 @@
     });
 
     $("submitBtn").addEventListener("click", submit);
-    $("modeNote").textContent =
-      store.mode === "supabase"
-        ? "共有モード：注文は気持ち市場に届きます"
-        : "デモモード：この端末内に保存されます（共有設定で本番連携できます）";
+    const modeNote = $("modeNote");
+    const cfg = (typeof window !== "undefined" && window.YASAI_CONFIG) || {};
+    const configHasKeys = !!cfg.SUPABASE_URL && !!cfg.SUPABASE_ANON_KEY;
+    if (store.mode === "supabase") {
+      modeNote.textContent = "共有モード：注文は気持ち市場に届きます";
+    } else if (configHasKeys) {
+      // 共有設定はあるのに localStorage に落ちている（Supabaseライブラリ未読込・通信不可など）。
+      // このまま注文するとサーバに届かず端末内に消えるため、赤帯で強く警告する。
+      modeNote.textContent =
+        "⚠ 注意：共有設定はありますが、いまこの画面はサーバに接続できていません。" +
+        "このまま注文しても気持ち市場に届きません。ページを再読み込みするか、気持ち市場までご連絡ください。";
+      modeNote.style.background = "#c62828";
+      modeNote.style.color = "#fff";
+      modeNote.style.fontSize = "0.95rem";
+      modeNote.style.fontWeight = "700";
+      modeNote.style.padding = "12px";
+      modeNote.style.borderRadius = "8px";
+      modeNote.style.margin = "8px";
+      modeNote.style.lineHeight = "1.5";
+    } else {
+      modeNote.textContent = "デモモード：この端末内に保存されます（共有設定で本番連携できます）";
+    }
   }
 
   document.addEventListener("DOMContentLoaded", init);

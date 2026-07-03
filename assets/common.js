@@ -78,7 +78,9 @@
   }
 
   function statusLabel(status) {
-    return { received: "受付", priced: "単価確定", done: "発行済" }[status] || status;
+    // 未知値を生値でフォールスルーさせない（DB直INSERT等で任意文字列が
+    // 混入しても管理画面に生描画されないよう固定ラベルを返す）
+    return { received: "受付", priced: "単価確定", done: "発行済" }[status] || "不明";
   }
 
   window.YasaiCommon = {
