@@ -28,9 +28,9 @@
   }
 
   /* ---- ロック画面 ----
-   * デモ（パスコード未設定）ではロックなしで開く。
-   * 本番は assets/config.js の YASAI_CONFIG.ADMIN_PASSCODE を設定するとロックが有効。
-   * さらに公開時は Netlify のパスワード保護併用を推奨（README参照）。*/
+   * 共有（Supabase）モードでは管理者メール＋パスワードのログインが必須。
+   * デモ（共有未設定）ではロックなしで開く。
+   * 公開時は Netlify 等のパスワード保護の併用を推奨（README参照）。*/
   const ADMIN_EMAIL = "kimochi.ichiba@gmail.com"; // RLSで許可された管理者メール
 
   async function gate() {
@@ -259,7 +259,7 @@
         <td>${C.escapeHtml(o.partner)}</td>
         <td>${C.escapeHtml(o.orderDate || "")}</td>
         <td>${(o.items || []).length}</td>
-        <td><span class="badge ${o.status}">${C.statusLabel(o.status)}</span></td>
+        <td><span class="badge ${C.escapeHtml(o.status)}">${C.escapeHtml(C.statusLabel(o.status))}</span></td>
         <td class="right">${t.subtotal ? C.yen(t.total) : "—"}</td>`;
       tr.addEventListener("click", () => openOrder(o.id));
       body.appendChild(tr);
@@ -278,10 +278,10 @@
         const wishText = it.wish ? it.wish : it.wishPrice ? C.yen(it.wishPrice) : "—";
         return `<tr>
           <td>${C.escapeHtml(it.name)}${it.variant ? "（" + C.escapeHtml(it.variant) + "）" : ""}</td>
-          <td class="right">${it.qty} ${C.escapeHtml(it.unit || "")}</td>
+          <td class="right">${Number(it.qty) || 0} ${C.escapeHtml(it.unit || "")}</td>
           <td>${C.escapeHtml(wishText)}</td>
           <td><input type="number" min="0" data-idx="${i}" class="unitp" placeholder="${std}"
-                value="${it.unitPrice != null ? it.unitPrice : ""}" /></td>
+                value="${it.unitPrice != null && Number.isFinite(Number(it.unitPrice)) ? Number(it.unitPrice) : ""}" /></td>
           <td class="right amt" data-idx="${i}">—</td>
         </tr>`;
       })
@@ -360,7 +360,7 @@
       );
       groupTexts[key] = head + "\n" + textLines.join("\n");
       const htmlLines = items
-        .map((it) => `<div style="font-size:0.86rem">・${C.escapeHtml(it.name)}${it.variant ? "（" + C.escapeHtml(it.variant) + "）" : ""} <strong>${it.qty}${C.escapeHtml(it.unit || "")}</strong>${it.wish ? ' <span class="muted">／' + C.escapeHtml(it.wish) + "</span>" : ""}</div>`)
+        .map((it) => `<div style="font-size:0.86rem">・${C.escapeHtml(it.name)}${it.variant ? "（" + C.escapeHtml(it.variant) + "）" : ""} <strong>${Number(it.qty) || 0}${C.escapeHtml(it.unit || "")}</strong>${it.wish ? ' <span class="muted">／' + C.escapeHtml(it.wish) + "</span>" : ""}</div>`)
         .join("");
       return `<div class="card" style="margin:8px 0;padding:10px;background:#fafdfa">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
